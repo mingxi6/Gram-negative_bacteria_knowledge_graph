@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>革兰氏阴性菌临床决策智能体 - 演示版</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+        font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+        background-color:#f4f6f8;
+        color:#1a1a1a;
+        line-height:1.6;
+        padding:20px;
+    }
+
+    .container { max-width:1440px; margin:0 auto; }
+
+    header {
+        background-color:#ffffff;
+        border:1px solid #dee2e6;
+        border-radius:6px;
+        padding:20px;
+        margin-bottom:20px;
+    }
+
+    h1 { font-size:24px; font-weight:600; margin-bottom:6px; color:#0F172A; }
+    .subtitle { font-size:13px; color:#666666; }
+
+    .demo-badge {
+        display:inline-block;
+        background-color:#17a2b8;
+        color:#fff;
+        padding:6px 14px;
+        border-radius:20px;
+        font-size:12px;
+        font-weight:600;
+        margin-left:12px;
+        letter-spacing:0.5px;
+    }
+
+    .workflow-steps {
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:20px;
+        padding:20px 10px;
+        background-color:#ffffff;
+        border:1px solid #dee2e6;
+        border-radius:6px;
+    }
+
+    .step { flex:1; text-align:center; padding:6px; position:relative; }
+
+    .step:not(:last-child)::after {
+        content:"→";
+        position:absolute;
+        right:-4px;
+        top:22px;
+        font-size:18px;
+        color:#c3c9cf;
+    }
+
+    .step-number {
+        display:inline-block;
+        width:30px; height:30px; line-height:30px;
+        background-color:#ffffff;
+        border:2px solid #dee2e6;
+        border-radius:50%;
+        margin-bottom:6px;
+        font-weight:600;
+        font-size:13px;
+    }
+
+    .step.active .step-number { background-color:#007bff; color:#fff; border-color:#007bff; }
+    .step.done .step-number { background-color:#28a745; color:#fff; border-color:#28a745; }
+    .step-title { font-size:12px; font-weight:500; color:#333; }
+
+    .main-content { display:grid; grid-template-columns:380px 1fr; gap:20px; }
+
+    .sidebar {
+        background-color:#ffffff;
+        border:1px solid #dee2e6;
+        border-radius:6px;
+        padding:20px;
+        align-self:start;
+        max-height:calc(100vh - 180px);
+        overflow-y:auto;
+    }
+
+    .section {
+        margin-bottom:20px;
+        background-color:#ffffff;
+        border:1px solid #dee2e6;
+        border-radius:6px;
+        padding:20px;
+    }
+
+    .section-title {
+        font-size:15px;
+        font-weight:600;
+        margin-bottom:14px;
+        padding-bottom:8px;
+        border-bottom:2px solid #dee2e6;
+        color:#0F172A;
+    }
+
+    .form-group { margin-bottom:12px; }
+
+    label { display:block; font-size:12.5px; font-weight:500; margin-bottom:4px; color:#333; }
+    label.required::after { content:"*"; color:#dc3545; margin-left:4px; }
+
+    input[type="text"], input[type="number"], select, textarea {
+        width:100%;
+        padding:7px 10px;
+        border:1px solid #ced4da;
+        border-radius:4px;
+        font-size:13px;
+        background-color:#ffffff;
+        color:#000;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline:none; 
+        border-color:#007bff; 
+        box-shadow:0 0 0 3px rgba(0,123,255,0.1);
+    }
+
+    textarea { resize:vertical; min-height:60px; font-family:inherit; }
+
+    .checkbox-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-bottom:8px; }
+    .checkbox-grid label { display:flex; align-items:center; font-weight:400; margin-bottom:0; }
+    .checkbox-grid input { width:auto; margin-right:6px; }
+
+    .lab-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+
+    button { 
+        padding:9px 16px; 
+        border:none; 
+        border-radius:4px; 
+        font-size:13.5px; 
+        font-weight:500; 
+        cursor:pointer; 
+        transition:all .15s; 
+    }
+    
+    .btn-demo { background-color:#17a2b8; color:#fff; }
+    .btn-demo:hover { background-color:#117a8b; }
+    
+    .btn-primary { background-color:#007bff; color:#fff; }
+    .btn-primary:hover { background-color:#0056b3; }
+    
+    .btn-secondary { background-color:#6c757d; color:#fff; }
+    .btn-secondary:hover { background-color:#545b62; }
+    
+    .btn-success { background-color:#28a745; color:#fff; }
+    .btn-success:hover { background-color:#1e7e34; }
+    
+    .btn-block { width:100%; margin-top:8px; }
+
+    .results-area { min-height:400px; }
+
+    .card { 
+        background-color:#ffffff; 
+        border:1px solid #dee2e6; 
+        border-radius:6px; 
+        padding:15px; 
+        margin-bottom:15px; 
+    }
+    
+    .card-header { 
+        font-size:15px; 
+        font-weight:600; 
+        margin-bottom:10px; 
+        padding-bottom:8px; 
+        border-bottom:1px solid #dee2e6; 
+        color:#0F172A; 
+    }
+    
+    .card-body p { margin-bottom:8px; line-height:1.8; }
+
+    .result-card.tier-first-border { border-left:4px solid #28a745; }
+    .result-card.tier-warn-border { border-left:4px solid #ffc107; }
+    .result-card.tier-danger-border { border-left:4px solid #dc3545; }
+
+    .result-list { margin-left:18px; margin-bottom:10px; }
+    .result-list li { margin-bottom:8px; line-height:1.8; }
+
+    .kv-table { width:100%; border-collapse:collapse; margin:10px 0; }
+    .kv-table td { padding:8px 10px; border:1px solid #eef0f2; font-size:13px; vertical-align:top; }
+    .kv-key { font-weight:600; color:#475569; width:150px; background-color:#f8f9fa; }
+
+    table.data-table { width:100%; border-collapse:collapse; margin:14px 0; }
+    table.data-table th { 
+        background-color:#f8f9fa; 
+        color:#333;
+        padding:10px; 
+        text-align:left; 
+        font-weight:600; 
+        border:1px solid #dee2e6; 
+        font-size:13px; 
+    }
+    table.data-table td { padding:10px; border:1px solid #dee2e6; font-size:13px; }
+    table.data-table tr:nth-child(even) { background-color:#fafbfc; }
+
+    .warning-box { 
+        background-color:#fff3cd; 
+        border:1px solid #ffc107; 
+        border-left-width:4px; 
+        padding:12px; 
+        margin:10px 0; 
+        border-radius:4px; 
+    }
+    .warning-title { font-weight:600; color:#856404; margin-bottom:5px; font-size:14px; }
+
+    .success-box { 
+        background-color:#d4edda; 
+        border:1px solid #28a745; 
+        border-left-width:4px; 
+        padding:12px; 
+        margin:10px 0; 
+        border-radius:4px; 
+    }
+    .success-title { font-weight:600; color:#155724; margin-bottom:5px; font-size:14px; }
+
+    .info-box { 
+        background-color:#d1ecf1; 
+        border:1px solid #17a2b8; 
+        border-left-width:4px; 
+        padding:12px; 
+        margin:10px 0; 
+        border-radius:4px; 
+    }
+    .info-title { font-weight:600; color:#0c5460; margin-bottom:5px; font-size:14px; }
+
+    .alert-banner { padding:12px 18px; border-radius:4px; margin-bottom:16px; font-size:13.5px; }
+    .alert-success { background-color:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .alert-info { background-color:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
+
+    .welcome-message { text-align:center; padding:60px 20px; color:#666; }
+    .welcome-icon { font-size:72px; margin-bottom:20px; }
+    .welcome-message h2 { font-size:24px; font-weight:700; margin-bottom:12px; color:#333; }
+    .welcome-message p { font-size:16px; line-height:1.8; margin-bottom:8px; }
+
+    .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>
+            革兰氏阴性菌临床决策智能体
+            <span class="demo-badge">演示版 DEMO</span>
+        </h1>
+        <p class="subtitle">Gram-Negative Bacteria Clinical Decision Support System · 基于规则推理引擎 · 无需后端API</p>
+    </header>
+
+    <div class="workflow-steps">
+        <div class="step active" id="step1"><div class="step-number">1</div><div class="step-title">患者信息</div></div>
+        <div class="step" id="step2"><div class="step-number">2</div><div class="step-title">病原体推断</div></div>
+        <div class="step" id="step3"><div class="step-number">3</div><div class="step-title">风险评估</div></div>
+        <div class="step" id="step4"><div class="step-number">4</div><div class="step-title">药物推荐</div></div>
+        <div class="step" id="step5"><div class="step-number">5</div><div class="step-title">疗效监测</div></div>
+        <div class="step" id="step6"><div class="step-number">6</div><div class="step-title">出院建议</div></div>
+    </div>
+
+    <div class="main-content">
+        <!-- ============ SIDEBAR: 输入区 ============ -->
+        <aside class="sidebar">
+
+            <button class="btn-demo btn-block" onclick="loadDemoCase()">
+                🧪 一键加载示范病例
+            </button>
+
+            <hr style="margin:18px 0; border:none; border-top:1px solid #dee2e6;">
+
+            <div class="section-title">患者基本信息</div>
+
+            <div class="form-group">
+                <label for="patientName" class="required">姓名</label>
+                <input type="text" id="patientName" placeholder="输入患者姓名">
+            </div>
+
+            <div class="form-group">
+                <label for="patientAge" class="required">年龄（岁）</label>
+                <input type="number" id="patientAge" min="0" max="120" placeholder="例如：65">
+            </div>
+
+            <div class="form-group">
+                <label for="patientGender" class="required">性别</label>
+                <select id="patientGender">
+                    <option value="">请选择</option>
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="patientWeight" class="required">体重（kg）</label>
+                <input type="number" id="patientWeight" min="1" max="300" placeholder="例如：70">
+            </div>
+
+            <div class="form-group">
+                <label for="infectionSite" class="required">感染部位</label>
+                <select id="infectionSite">
+                    <option value="">请选择感染部位</option>
+                    <option value="bsi">血流感染</option>
+                    <option value="hap">医院获得性肺炎</option>
+                    <option value="vap">呼吸机相关性肺炎</option>
+                    <option value="cap">社区获得性肺炎</option>
+                    <option value="uti">尿路感染</option>
+                    <option value="complicated_uti">复杂性尿路感染</option>
+                    <option value="iai">腹腔感染</option>
+                    <option value="ssti">皮肤软组织感染</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="infectionType" class="required">感染类型</label>
+                <select id="infectionType">
+                    <option value="">请选择感染类型</option>
+                    <option value="community_acquired">社区获得性</option>
+                    <option value="hospital_acquired">医院获得性</option>
+                    <option value="healthcare_associated">医疗保健相关</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="clinicalSeverity" class="required">感染严重程度</label>
+                <select id="clinicalSeverity">
+                    <option value="">请选择严重程度</option>
+                    <option value="mild">轻度</option>
+                    <option value="moderate">中度</option>
+                    <option value="severe">重度</option>
+                    <option value="critical">危重（脓毒性休克）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="icuStatus">ICU状态</label>
+                <select id="icuStatus">
+                    <option value="no">非ICU</option>
+                    <option value="yes">ICU住院</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="immuneStatus">免疫状态</label>
+                <select id="immuneStatus">
+                    <option value="normal">正常</option>
+                    <option value="neutropenia">中性粒细胞减少</option>
+                    <option value="immunosuppressed">免疫抑制</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="renalFunction">肾功能</label>
+                <select id="renalFunction">
+                    <option value="normal">正常（CrCl≥90）</option>
+                    <option value="mild_impairment">轻度受损（60-89）</option>
+                    <option value="moderate_impairment">中度受损（30-59）</option>
+                    <option value="severe_impairment">重度受损（15-29）</option>
+                    <option value="dialysis">依赖透析</option>
+                </select>
+            </div>
+
+            <hr style="margin:18px 0; border:none; border-top:1px solid #dee2e6;">
+
+            <div class="section-title">病原体信息</div>
+
+            <div class="form-group">
+                <label for="pathogenName">细菌名称</label>
+                <input type="text" id="pathogenName" placeholder="例如：Klebsiella pneumoniae">
+            </div>
+
+            <div class="form-group">
+                <label for="gnClassification">革兰氏阴性菌分类</label>
+                <select id="gnClassification">
+                    <option value="">请选择分类</option>
+                    <option value="enterobacterales">肠杆菌目</option>
+                    <option value="non_fermenter_pseudomonas">铜绿假单胞菌</option>
+                    <option value="non_fermenter_acinetobacter">鲍曼不动杆菌</option>
+                    <option value="other">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cultureResult">培养结果</label>
+                <select id="cultureResult">
+                    <option value="">未进行/待出</option>
+                    <option value="positive">阳性</option>
+                    <option value="negative">阴性</option>
+                    <option value="pending">结果待出</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>耐药基因（可多选）</label>
+                <div class="checkbox-grid">
+                    <label><input type="checkbox" class="resistance-gene" value="blaKPC"> blaKPC</label>
+                    <label><input type="checkbox" class="resistance-gene" value="blaNDM"> blaNDM</label>
+                    <label><input type="checkbox" class="resistance-gene" value="blaOXA-48"> blaOXA-48</label>
+                    <label><input type="checkbox" class="resistance-gene" value="ESBL"> ESBL</label>
+                </div>
+            </div>
+
+            <hr style="margin:18px 0; border:none; border-top:1px solid #dee2e6;">
+
+            <div class="section-title">检查指标</div>
+
+            <div class="lab-grid">
+                <div class="form-group"><label for="labWbc">WBC（×10⁹/L）</label><input type="number" id="labWbc" step="0.1"></div>
+                <div class="form-group"><label for="labNeutPct">中性粒细胞（%）</label><input type="number" id="labNeutPct" step="0.1"></div>
+                <div class="form-group"><label for="labCrp">CRP（mg/L）</label><input type="number" id="labCrp" step="0.1"></div>
+                <div class="form-group"><label for="labPct">PCT（ng/mL）</label><input type="number" id="labPct" step="0.01"></div>
+                <div class="form-group"><label for="labCr">血肌酐（μmol/L）</label><input type="number" id="labCr" step="1"></div>
+                <div class="form-group"><label for="labBun">尿素氮（mmol/L）</label><input type="number" id="labBun" step="0.1"></div>
+            </div>
+
+            <button class="btn-primary btn-block" onclick="runInference()">
+                🔍 开始智能诊断分析
+            </button>
+
+            <button class="btn-secondary btn-block" onclick="resetForm()">
+                🔄 重置表单
+            </button>
+
+        </aside>
+
+        <!-- ============ MAIN: 结果展示区 ============ -->
+        <main class="results-area" id="resultsArea">
+            <div class="welcome-message">
+                <div class="welcome-icon">🏥</div>
+                <h2>革兰氏阴性菌临床决策支持系统</h2>
+                <p>欢迎使用临床决策智能体演示系统</p>
+                <p>👈 请在左侧填写患者信息，或点击"一键加载示范病例"</p>
+                <p>系统将自动进行病原体推断、风险评估和药物推荐</p>
+                <br>
+                <p style="color:#999; font-size:14px;">
+                    💡 本演示版本所有数据均在前端处理，无需后端API<br>
+                    适用于教学演示、PPT展示等场景
+                </p>
+            </div>
+        </main>
+
+    </div>
+
+</div>
+
+<script>
+// ==================== 一键加载示范病例 ====================
+function loadDemoCase() {
+    // 患者基本信息
+    document.getElementById('patientName').value = '示例患者-王某';
+    document.getElementById('patientAge').value = '68';
+    document.getElementById('patientGender').value = 'male';
+    document.getElementById('patientWeight').value = '72';
+    document.getElementById('infectionSite').value = 'bsi';
+    document.getElementById('infectionType').value = 'hospital_acquired';
+    document.getElementById('clinicalSeverity').value = 'severe';
+    document.getElementById('icuStatus').value = 'yes';
+    document.getElementById('immuneStatus').value = 'normal';
+    document.getElementById('renalFunction').value = 'mild_impairment';
+
+    // 病原体信息
+    document.getElementById('pathogenName').value = 'Klebsiella pneumoniae (肺炎克雷伯菌)';
+    document.getElementById('gnClassification').value = 'enterobacterales';
+    document.getElementById('cultureResult').value = 'positive';
+    
+    // 耐药基因
+    document.querySelectorAll('.resistance-gene').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.resistance-gene')[0].checked = true; // blaKPC
+
+    // 检查指标
+    document.getElementById('labWbc').value = '18.5';
+    document.getElementById('labNeutPct').value = '89';
+    document.getElementById('labCrp').value = '126';
+    document.getElementById('labPct').value = '9.8';
+    document.getElementById('labCr').value = '135';
+    document.getElementById('labBun').value = '8.6';
+
+    // 显示提示
+    showAlert('✅ 示范病例已加载！正在自动执行智能诊断分析...', 'success');
+    
+    // 延迟800毫秒后自动运行推理
+    setTimeout(() => {
+        runInference();
+    }, 800);
+}
+
+// ==================== 重置表单 ====================
+function resetForm() {
+    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => input.value = '');
+    document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
+
+    document.getElementById('resultsArea').innerHTML = `
+        <div class="welcome-message">
+            <div class="welcome-icon">🏥</div>
+            <h2>革兰氏阴性菌临床决策支持系统</h2>
+            <p>欢迎使用临床决策智能体演示系统</p>
+            <p>👈 请在左侧填写患者信息，或点击"一键加载示范病例"</p>
+            <p>系统将自动进行病原体推断、风险评估和药物推荐</p>
+            <br>
+            <p style="color:#999; font-size:14px;">
+                💡 本演示版本所有数据均在前端处理，无需后端API<br>
+                适用于教学演示、PPT展示等场景
+            </p>
+        </div>
+    `;
+
+    resetSteps();
+}
+
+// ==================== 更新流程步骤 ====================
+function updateStep(stepNum) {
+    for(let i = 1; i <= 6; i++) {
+        const step = document.getElementById(`step${i}`);
+        step.classList.remove('active', 'done');
+        if(i < stepNum) step.classList.add('done');
+        else if(i === stepNum) step.classList.add('active');
+    }
+}
+
+function resetSteps() {
+    for(let i = 1; i <= 6; i++) {
+        const step = document.getElementById(`step${i}`);
+        step.classList.remove('active', 'done');
+    }
+    document.getElementById('step1').classList.add('active');
+}
+
+// ==================== 显示提示信息 ====================
+function showAlert(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+    const alertHTML = `<div class="alert-banner ${alertClass}">${message}</div>`;
+
+    const resultsArea = document.getElementById('resultsArea');
+    const existingAlert = resultsArea.querySelector('.alert-banner');
+    if(existingAlert) existingAlert.remove();
+    
+    resultsArea.insertAdjacentHTML('afterbegin', alertHTML);
+
+    setTimeout(() => {
+        const alert = resultsArea.querySelector('.alert-banner');
+        if(alert) alert.remove();
+    }, 4000);
+}
+
+// ==================== 核心推理引擎 ====================
+function runInference() {
+    // 收集输入数据
+    const data = {
+        name: document.getElementById('patientName').value,
+        age: parseInt(document.getElementById('patientAge').value) || 0,
+        gender: document.getElementById('patientGender').value,
+        weight: parseFloat(document.getElementById('patientWeight').value) || 0,
+        infection_site: document.getElementById('infectionSite').value,
+        infection_type: document.getElementById('infectionType').value,
+        severity: document.getElementById('clinicalSeverity').value,
+        icu_status: document.getElementById('icuStatus').value,
+        immune_status: document.getElementById('immuneStatus').value,
+        renal_function: document.getElementById('renalFunction').value,
+        pathogen_name: document.getElementById('pathogenName').value,
+        gn_classification: document.getElementById('gnClassification').value,
+        culture_result: document.getElementById('cultureResult').value,
+        resistance_genes: Array.from(document.querySelectorAll('.resistance-gene:checked')).map(cb => cb.value),
+        wbc: parseFloat(document.getElementById('labWbc').value) || 0,
+        neut_pct: parseFloat(document.getElementById('labNeutPct').value) || 0,
+        crp: parseFloat(document.getElementById('labCrp').value) || 0,
+        pct: parseFloat(document.getElementById('labPct').value) || 0,
+        creatinine: parseFloat(document.getElementById('labCr').value) || 0,
+        bun: parseFloat(document.getElementById('labBun').value) || 0
+    };
+
+    // 简单验证
+    if(!data.name || !data.age || !data.gender || !data.weight || !data.infection_site || 
+       !data.infection_type || !data.severity) {
+        alert('❌ 请填写完整的患者基本信息！');
+        return;
+    }
+
+    // 显示结果区域
+    const resultsHTML = generateResults(data);
+    document.getElementById('resultsArea').innerHTML = resultsHTML;
+
+    // 滚动到结果区域
+    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==================== 生成推理结果 ====================
+function generateResults(data) {
+    // 步骤1：病原体推断
+    updateStep(2);
+    const pathogens = inferPathogens(data);
+
+    // 步骤2：风险评估
+    updateStep(3);
+    const riskAssessment = assessRisk(data);
+
+    // 步骤3：药物推荐
+    updateStep(4);
+    const drugRecommendations = recommendDrugs(data, pathogens, riskAssessment);
+
+    // 步骤4：疗效监测
+    updateStep(5);
+    const monitoring = generateMonitoring(data);
+
+    // 步骤5：出院建议
+    updateStep(6);
+    const discharge = generateDischarge(data);
+
+    return `
+        <div class="alert-banner alert-success">
+            ✅ 智能诊断分析完成！系统已完成全流程推理
+        </div>
+
+        ${generatePatientSummary(data)}
+        ${generatePathogenCard(pathogens)}
+        ${generateRiskCard(riskAssessment)}
+        ${generateDrugCard(drugRecommendations)}
+        ${generateMonitoringCard(monitoring)}
+        ${generateDischargeCard(discharge)}
+        ${generateDisclaimer()}
+    `;
+}
+
+// ==================== 患者信息摘要 ====================
+function generatePatientSummary(data) {
+    const genderText = data.gender === 'male' ? '男性' : '女性';
+    const infectionSiteMap = {
+        'bsi': '血流感染',
+        'hap': '医院获得性肺炎',
+        'vap': '呼吸机相关性肺炎',
+        'cap': '社区获得性肺炎',
+        'uti': '尿路感染',
+        'complicated_uti': '复杂性尿路感染',
+        'iai': '腹腔感染',
+        'ssti': '皮肤软组织感染'
+    };
+    
+    const severityMap = {
+        'mild': '轻度',
+        'moderate': '中度',
+        'severe': '重度',
+        'critical': '危重（脓毒性休克）'
+    };
+
+    return `
+        <div class="card">
+            <div class="card-header">📋 患者信息摘要</div>
+            <div class="card-body">
+                <table class="kv-table">
+                    <tr><td class="kv-key">姓名</td><td>${data.name}</td></tr>
+                    <tr><td class="kv-key">年龄/性别</td><td>${data.age}岁 / ${genderText}</td></tr>
+                    <tr><td class="kv-key">体重</td><td>${data.weight} kg</td></tr>
+                    <tr><td class="kv-key">感染部位</td><td>${infectionSiteMap[data.infection_site] || data.infection_site}</td></tr>
+                    <tr><td class="kv-key">感染类型</td><td>${data.infection_type === 'hospital_acquired' ? '医院获得性' : '社区获得性'}</td></tr>
+                    <tr><td class="kv-key">严重程度</td><td>${severityMap[data.severity] || data.severity}</td></tr>
+                    <tr><td class="kv-key">ICU状态</td><td>${data.icu_status === 'yes' ? 'ICU住院' : '非ICU'}</td></tr>
+                    <tr><td class="kv-key">免疫状态</td><td>${data.immune_status === 'normal' ? '正常' : data.immune_status}</td></tr>
+                    <tr><td class="kv-key">肾功能</td><td>${data.renal_function}</td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== 病原体推断 ====================
+function inferPathogens(data) {
+    const pathogens = [];
+
+    // 基于感染部位推断
+    if(data.infection_site === 'bsi' || data.infection_site === 'hap' || data.infection_site === 'vap') {
+        pathogens.push({
+            name: '肺炎克雷伯菌 (Klebsiella pneumoniae)',
+            probability: 0.80,
+            reason: '医院获得性血流感染最常见病原体之一'
+        });
+        pathogens.push({
+            name: '大肠埃希菌 (Escherichia coli)',
+            probability: 0.65,
+            reason: '血流感染常见革兰氏阴性菌'
+        });
+    }
+
+    // 基于耐药基因调整
+    if(data.resistance_genes.includes('blaKPC') || data.resistance_genes.includes('blaNDM')) {
+        pathogens.push({
+            name: '碳青霉烯耐药肠杆菌 (CRE)',
+            probability: 0.85,
+            reason: '检出碳青霉烯酶基因，高度提示CRE感染'
+        });
+    }
+
+    // 基于ICU状态调整
+    if(data.icu_status === 'yes') {
+        pathogens.push({
+            name: '铜绿假单胞菌 (Pseudomonas aeruginosa)',
+            probability: 0.60,
+            reason: 'ICU获得性感染常见非发酵菌'
+        });
+    }
+
+    return pathogens;
+}
+
+// ==================== 风险评估 ====================
+function assessRisk(data) {
+    let riskScore = 0;
+    const riskFactors = [];
+
+    // 年龄
+    if(data.age >= 65) {
+        riskScore += 2;
+        riskFactors.push('高龄患者（≥65岁）');
+    }
+
+    // 感染严重程度
+    if(data.severity === 'critical') {
+        riskScore += 5;
+        riskFactors.push('危重症（脓毒性休克）');
+    } else if(data.severity === 'severe') {
+        riskScore += 3;
+        riskFactors.push('重度感染');
+    }
+
+    // 实验室指标
+    if(data.wbc > 15 || data.wbc < 4) {
+        riskScore += 2;
+        riskFactors.push('白细胞异常（' + data.wbc + '×10⁹/L）');
+    }
+
+    if(data.pct >= 2) {
+        riskScore += 2;
+        riskFactors.push('PCT显著升高（' + data.pct + ' ng/mL）');
+    }
+
+    if(data.creatinine > 133) {
+        riskScore += 2;
+        riskFactors.push('肾功能异常（肌酐 ' + data.creatinine + ' μmol/L）');
+    }
+
+    // ICU住院
+    if(data.icu_status === 'yes') {
+        riskScore += 3;
+        riskFactors.push('ICU住院');
+    }
+
+    // 免疫抑制
+    if(data.immune_status !== 'normal') {
+        riskScore += 3;
+        riskFactors.push('免疫功能异常');
+    }
+
+    // 耐药基因
+    if(data.resistance_genes.length > 0) {
+        riskScore += 3;
+        riskFactors.push('检出耐药基因：' + data.resistance_genes.join('、'));
+    }
+
+    // 风险等级
+    let riskLevel, riskColor, recommendation;
+    if(riskScore <= 4) {
+        riskLevel = '低风险';
+        riskColor = 'success';
+        recommendation = '可考虑标准抗生素治疗，密切观察';
+    } else if(riskScore <= 9) {
+        riskLevel = '中风险';
+        riskColor = 'warning';
+        recommendation = '建议广谱抗生素治疗，加强监测';
+    } else {
+        riskLevel = '高风险';
+        riskColor = 'danger';
+        recommendation = '建议ICU治疗，超广谱抗生素，加强器官支持';
+    }
+
+    return {
+        score: riskScore,
+        level: riskLevel,
+        color: riskColor,
+        factors: riskFactors,
+        recommendation: recommendation
+    };
+}
+
+// ==================== 药物推荐 ====================
+function recommendDrugs(data, pathogens, risk) {
+    const drugs = [];
+
+    // 检查是否有碳青霉烯耐药
+    const hasCRE = data.resistance_genes.includes('blaKPC') || data.resistance_genes.includes('blaNDM') || 
+                   data.resistance_genes.includes('blaOXA-48');
+
+    // 根据风险等级和耐药情况推荐
+    if(hasCRE) {
+        // CRE感染
+        drugs.push({
+            tier: 'first',
+            name: '头孢他啶阿维巴坦 (Ceftazidime-Avibactam)',
+            dose: '2.5g q8h IV（2小时输注）',
+            reason: 'CRE首选治疗，覆盖KPC型碳青霉烯酶',
+            duration: '10-14天'
+        });
+        drugs.push({
+            tier: 'first',
+            name: '美罗培南-法硼巴坦 (Meropenem-Vaborbactam)',
+            dose: '4g q8h IV（3小时输注）',
+            reason: 'CRE替代方案，覆盖KPC和部分OXA-48型',
+            duration: '10-14天'
+        });
+        drugs.push({
+            tier: 'alternative',
+            name: '多黏菌素 (Colistin) + 替加环素',
+            dose: 'Colistin: 负荷9MIU，维持4.5MIU q12h; 替加环素: 100mg负荷，50mg q12h',
+            reason: '多重耐药备选方案，需密切监测肾毒性',
+            duration: '7-10天'
+        });
+    } else if(risk.level === '高风险') {
+        // 高风险但非CRE
+        drugs.push({
+            tier: 'first',
+            name: '美罗培南 (Meropenem)',
+            dose: '1-2g q8h IV（延长输注）',
+            reason: '广谱碳青霉烯类，覆盖多数革兰氏阴性菌',
+            duration: '10-14天'
+        });
+        drugs.push({
+            tier: 'first',
+            name: '亚胺培南西司他丁 (Imipenem-Cilastatin)',
+            dose: '500mg q6h 或 1g q8h IV',
+            reason: '碳青霉烯类替代方案',
+            duration: '10-14天'
+        });
+    } else if(risk.level === '中风险') {
+        drugs.push({
+            tier: 'first',
+            name: '哌拉西林他唑巴坦 (Piperacillin-Tazobactam)',
+            dose: '4.5g q6-8h IV（延长输注）',
+            reason: '广谱β-内酰胺类/β-内酰胺酶抑制剂',
+            duration: '7-10天'
+        });
+        drugs.push({
+            tier: 'alternative',
+            name: '头孢哌酮舒巴坦 (Cefoperazone-Sulbactam)',
+            dose: '3g q8h IV',
+            reason: '覆盖革兰氏阴性菌，包括部分AmpC高产菌株',
+            duration: '7-10天'
+        });
+    } else {
+        drugs.push({
+            tier: 'first',
+            name: '头孢曲松 (Ceftriaxone)',
+            dose: '2g q24h IV',
+            reason: '第三代头孢菌素，覆盖常见病原体',
+            duration: '5-7天'
+        });
+    }
+
+    // 肾功能不全调整
+    if(data.renal_function !== 'normal') {
+        drugs.forEach(drug => {
+            drug.note = '⚠️ 注意：患者肾功能异常，需根据肌酐清除率调整剂量';
+        });
+    }
+
+    return drugs;
+}
+
+// ==================== 疗效监测 ====================
+function generateMonitoring(data) {
+    return {
+        clinical: [
+            '体温：每4小时测量，目标恢复正常',
+            '生命体征：血压、心率、呼吸频率、尿量监测',
+            '感染症状：观察临床症状改善情况',
+            '意识状态：神志、精神状态评估'
+        ],
+        laboratory: [
+            '血常规：每48小时复查，监测白细胞、中性粒细胞变化',
+            'CRP/PCT：动态监测炎症指标下降趋势',
+            '肝肾功能：每48-72小时复查，监测药物相关器官损伤',
+            '血气分析：必要时监测乳酸、酸碱平衡'
+        ],
+        microbiology: [
+            '血培养：治疗前留取，指导后续调整',
+            '药敏试验：明确耐药谱，优化抗生素方案',
+            '复查培养：治疗后评估病原体清除情况'
+        ],
+        adjustment: [
+            '48-72小时评估初步疗效',
+            '根据药敏结果及时调整方案',
+            '治疗5-7天后评估降阶梯可能性',
+            '总疗程根据临床反应个体化调整'
+        ]
+    };
+}
+
+// ==================== 出院建议 ====================
+function generateDischarge(data) {
+    return {
+        criteria: [
+            '✅ 体温正常≥48小时',
+            '✅ 白细胞计数及分类恢复正常',
+            '✅ CRP、PCT等炎症指标明显下降',
+            '✅ 感染症状基本消失',
+            '✅ 能够耐受口服药物',
+            '✅ 无需静脉治疗或器官支持'
+        ],
+        medications: [
+            '口服抗生素：完成总疗程（根据感染部位和严重程度）',
+            '如有基础疾病，继续相应治疗',
+            '注意药物相互作用和不良反应'
+        ],
+        followUp: [
+            '出院后1-2周门诊复诊',
+            '复查血常规、CRP等感染指标',
+            '评估肝肾功能恢复情况',
+            '如症状复发或加重，及时就诊'
+        ],
+        education: [
+            '按时按量服药，完成全疗程',
+            '注意休息，保证营养摄入',
+            '保持良好个人卫生习惯',
+            '避免接触感染源',
+            '戒烟限酒，控制基础疾病'
+        ]
+    };
+}
+
+// ==================== 生成各卡片HTML ====================
+function generatePathogenCard(pathogens) {
+    let pathogenRows = '';
+    pathogens.forEach(p => {
+        const probPercent = (p.probability * 100).toFixed(0);
+        pathogenRows += `
+            <tr>
+                <td>${p.name}</td>
+                <td>${probPercent}%</td>
+                <td>${p.reason}</td>
+            </tr>
+        `;
+    });
+
+    return `
+        <div class="card result-card tier-first-border">
+            <div class="card-header">🦠 步骤2：病原体推断</div>
+            <div class="card-body">
+                <div class="info-box">
+                    <div class="info-title">📊 推断结果</div>
+                    <p>基于患者感染部位、临床表现、培养结果和耐药基因，系统推断以下可能病原体：</p>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>病原体</th>
+                            <th>可能性</th>
+                            <th>推断依据</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pathogenRows}
+                    </tbody>
+                </table>
+                <p style="margin-top:12px; color:#666; font-size:13px;">
+                    💡 <strong>临床建议：</strong>应尽快留取微生物培养标本并进行药敏试验，以明确病原体并优化治疗方案。
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function generateRiskCard(risk) {
+    const boxClass = risk.color === 'success' ? 'success-box' : (risk.color === 'warning' ? 'warning-box' : 'warning-box');
+    const titleClass = risk.color === 'success' ? 'success-title' : 'warning-title';
+
+    let factorsList = '';
+    risk.factors.forEach(f => {
+        factorsList += `<li>${f}</li>`;
+    });
+
+    return `
+        <div class="card result-card tier-warn-border">
+            <div class="card-header">⚠️ 步骤3：感染风险评估</div>
+            <div class="card-body">
+                <div class="${boxClass}">
+                    <div class="${titleClass}">风险等级：${risk.level}（评分：${risk.score}分）</div>
+                    <p>${risk.recommendation}</p>
+                </div>
+
+                <p style="margin-top:14px;"><strong>识别的风险因素：</strong></p>
+                <ul class="result-list">
+                    ${factorsList}
+                </ul>
+
+                <div class="info-box" style="margin-top:12px;">
+                    <div class="info-title">📋 评分说明</div>
+                    <p>
+                        • 0-4分：低风险 - 预后良好，可标准治疗<br>
+                        • 5-9分：中风险 - 需加强监测，广谱抗生素<br>
+                        • ≥10分：高风险 - 建议ICU监护，超广谱抗生素及器官支持
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateDrugCard(drugs) {
+    let firstLineHTML = '';
+    let alternativeHTML = '';
+
+    drugs.forEach(drug => {
+        const drugHTML = `
+            <div style="margin-bottom:16px; padding:14px; background-color:#f8f9fa; border-radius:6px; border-left:4px solid ${drug.tier === 'first' ? '#28a745' : '#ffc107'};">
+                <p style="font-weight:700; font-size:15px; margin-bottom:6px;">
+                    ${drug.tier === 'first' ? '🥇' : '🥈'} ${drug.name}
+                </p>
+                <p><strong>用法用量：</strong>${drug.dose}</p>
+                <p><strong>推荐理由：</strong>${drug.reason}</p>
+                <p><strong>疗程：</strong>${drug.duration}</p>
+                ${drug.note ? `<p style="color:#dc3545; font-weight:600; margin-top:6px;">${drug.note}</p>` : ''}
+            </div>
+        `;
+
+        if(drug.tier === 'first') {
+            firstLineHTML += drugHTML;
+        } else {
+            alternativeHTML += drugHTML;
+        }
+    });
+
+    return `
+        <div class="card result-card tier-first-border">
+            <div class="card-header">💊 步骤4：抗菌药物推荐</div>
+            <div class="card-body">
+                <div class="success-box">
+                    <div class="success-title">✅ 推荐方案</div>
+                    <p>基于病原体推断、风险评估、耐药情况和最新临床指南，系统推荐以下治疗方案：</p>
+                </div>
+
+                <p style="margin:14px 0 10px; font-weight:700; font-size:15px;">一线推荐：</p>
+                ${firstLineHTML}
+
+                ${alternativeHTML ? `
+                    <p style="margin:14px 0 10px; font-weight:700; font-size:15px;">替代方案：</p>
+                    ${alternativeHTML}
+                ` : ''}
+
+                <div class="warning-box" style="margin-top:16px;">
+                    <div class="warning-title">⚠️ 重要提示</div>
+                    <p>
+                        • 治疗前必须留取培养标本，避免影响结果<br>
+                        • 48-72小时评估疗效，根据药敏结果及时调整<br>
+                        • 密切监测肝肾功能和药物不良反应<br>
+                        • 重症患者考虑联合用药，增强抗菌效果<br>
+                        • 所有推荐需结合患者具体情况和最新指南
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateMonitoringCard(monitoring) {
+    let clinicalList = monitoring.clinical.map(item => `<li>${item}</li>`).join('');
+    let labList = monitoring.laboratory.map(item => `<li>${item}</li>`).join('');
+    let microList = monitoring.microbiology.map(item => `<li>${item}</li>`).join('');
+    let adjustList = monitoring.adjustment.map(item => `<li>${item}</li>`).join('');
+
+    return `
+        <div class="card">
+            <div class="card-header">📈 步骤5：疗效监测与方案调整</div>
+            <div class="card-body">
+                <p style="margin-bottom:12px;"><strong>🩺 临床监测：</strong></p>
+                <ul class="result-list">${clinicalList}</ul>
+
+                <p style="margin:14px 0 8px;"><strong>🧪 实验室监测：</strong></p>
+                <ul class="result-list">${labList}</ul>
+
+                <p style="margin:14px 0 8px;"><strong>🔬 微生物学监测：</strong></p>
+                <ul class="result-list">${microList}</ul>
+
+                <div class="info-box" style="margin-top:14px;">
+                    <div class="info-title">🔄 治疗方案调整</div>
+                    <ul class="result-list">${adjustList}</ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateDischargeCard(discharge) {
+    let criteriaList = discharge.criteria.map(item => `<li>${item}</li>`).join('');
+    let medList = discharge.medications.map(item => `<li>${item}</li>`).join('');
+    let followUpList = discharge.followUp.map(item => `<li>${item}</li>`).join('');
+    let educationList = discharge.education.map(item => `<li>${item}</li>`).join('');
+
+    return `
+        <div class="card">
+            <div class="card-header">🏠 步骤6：出院标准与随访建议</div>
+            <div class="card-body">
+                <div class="success-box">
+                    <div class="success-title">✅ 出院标准</div>
+                    <ul class="result-list">${criteriaList}</ul>
+                </div>
+
+                <p style="margin:14px 0 8px;"><strong>💊 出院带药：</strong></p>
+                <ul class="result-list">${medList}</ul>
+
+                <p style="margin:14px 0 8px;"><strong>📅 随访计划：</strong></p>
+                <ul class="result-list">${followUpList}</ul>
+
+                <p style="margin:14px 0 8px;"><strong>📖 患者教育：</strong></p>
+                <ul class="result-list">${educationList}</ul>
+            </div>
+        </div>
+    `;
+}
+
+function generateDisclaimer() {
+    return `
+        <div class="card" style="border-left-color:#6c757d; background-color:#f8f9fa;">
+            <div class="card-body">
+                <p style="font-size:12px; color:#666; line-height:1.8;">
+                    <strong>⚠️ 免责声明：</strong><br>
+                    本系统为<strong>教学演示版本</strong>，仅用于临床决策支持的概念演示和教学目的。
+                    所有推理结果均基于简化的规则引擎和示例数据，<strong>不能</strong>替代专业医疗判断。
+                    实际临床决策必须由具备资质的医疗专业人员根据患者具体情况、最新临床指南和药敏试验结果综合判断。
+                    本系统不承担任何医疗责任。
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== 页面加载时自动重置 ====================
+window.onload = function() {
+    resetSteps();
+    console.log('✅ 革兰氏阴性菌CDSS演示系统已加载');
+    console.log('💡 点击"一键加载示范病例"按钮即可查看完整演示');
+};
+</script>
+
+</body>
+</html>
